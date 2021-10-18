@@ -374,7 +374,7 @@ class APIRequest:
 
         # Format not specified: get from Accept headers (MIME types)
         # e.g. format_ = 'text/html'
-        h = headers.get('accept', headers.get('Accept', ''))
+        h = headers.get('accept', headers.get('Accept', '')).strip() # noqa
         (fmts, mimes) = zip(*FORMAT_TYPES.items())
         # basic support for complex types (i.e. with "q=0.x")
         for type_ in (t.split(';')[0].strip() for t in h.split(',') if t):

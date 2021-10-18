@@ -117,14 +117,14 @@ def test_apirequest(api_):
     assert apireq.get_linkrel(F_JSON) == 'alternate'
 
     # Test conflixting format string
-    hh = 'plain/text,application/json,application/ld+json;q=0.9,'
+    hh = 'plain/text,application/ld+json,application/json;q=0.9,'
     req = mock_request(HTTP_ACCEPT=hh)
     apireq = APIRequest(req, api_.locales)
     assert apireq.is_valid()
-    assert apireq.format == F_JSON
+    assert apireq.format == F_JSONLD
     assert apireq.get_response_headers()['Content-Type'] == \
-           FORMAT_TYPES[F_JSON]
-    assert apireq.get_linkrel(F_JSON) == 'self'
+           FORMAT_TYPES[F_JSONLD]
+    assert apireq.get_linkrel(F_JSONLD) == 'self'
     assert apireq.get_linkrel(F_HTML) == 'alternate'
 
     # Overrule HTTP content negotiation
