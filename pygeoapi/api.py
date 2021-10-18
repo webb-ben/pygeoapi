@@ -576,6 +576,7 @@ class API:
         CHARSET[0] = config['server'].get('encoding', 'utf-8')
         if config['server'].get('gzip') is True:
             FORMAT_TYPES[F_GZIP] = 'application/gzip'
+            FORMAT_TYPES.move_to_end(F_JSON)
 
         # Process language settings (first locale is default!)
         self.locales = l10n.get_locales(config)
