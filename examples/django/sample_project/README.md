@@ -47,7 +47,7 @@ Update `settings.py`:
 ```python
 
 import os
-from pygeoapi.django_app import config
+from pygeoapi.config import get_config
 
 INSTALLED_APPS = [
     # other apps
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 STATIC_ROOT = os.path.join( BASE_DIR / 'assets')
 
 # Specific pygeoapi setting
-PYGEOAPI_CONFIG = config()
+PYGEOAPI_CONFIG = get_config()
    ...
 ```
 
