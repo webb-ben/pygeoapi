@@ -128,8 +128,9 @@ class Admin(API):
 
         # Preserve env variables
         LOGGER.debug('Reading env variables in configuration')
-        raw_conf = get_config(raw=True)
-        conf = get_config()
+        safeload = lambda x: json.loads(to_json(x))
+        raw_conf = safeload(get_config(raw=True))
+        conf = safeload(get_config())
         patch = make_patch(conf, raw_conf)
 
         LOGGER.debug('Merging env variables')
