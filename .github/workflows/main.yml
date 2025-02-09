@@ -41,11 +41,10 @@ jobs:
       uses: actions/cache@v3
       with:
         path: /var/lib/docker
-        key: ${{ runner.os }}-workflow-${{ hashFiles('.github/workflows/main.yml') }}
+        key: ${{ runner.os }}-workflow-images
         restore-keys: |
-          ${{ runner.os }}-workflow-${{ hashFiles('.github/workflows/main.yml') }}
+          ${{ runner.os }}-workflow-images
           ${{ runner.os }}-workflow-
-          ${{ runner.os }}-buildx-
     - uses: actions/checkout@master
     - uses: actions/setup-python@v5
       name: Setup Python ${{ matrix.python-version }}
@@ -168,3 +167,8 @@ jobs:
       if: ${{ failure() }}
       run: |
         pip3 list -v
+    - name: Cleanup permissions
+      if: always()
+      run: |
+        sudo chown -R root:root /var/lib/docker
+        docker image prune -f
