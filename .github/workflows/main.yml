@@ -37,15 +37,15 @@ jobs:
     - name: Chown user
       run: |
         sudo chown -R $USER:$USER $GITHUB_WORKSPACE
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
     - name: Cache Docker layers
       uses: actions/cache@v3
       with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ hashFiles('**/main.yml') }}
+        path: /var/lib/docker
+        key: ${{ runner.os }}-workflow-${{ hashFiles('.github/workflows/main.yml') }}
         restore-keys: |
-          ${{ runner.os }}-buildx-${{ hashFiles('**/main.yml') }}
+          ${{ runner.os }}-workflow-${{ hashFiles('.github/workflows/main.yml') }}
+          ${{ runner.os }}-workflow-
+          ${{ runner.os }}-buildx-
     - uses: actions/checkout@master
     - uses: actions/setup-python@v5
       name: Setup Python ${{ matrix.python-version }}
@@ -96,23 +96,13 @@ jobs:
       with:
         packages: gdal-bin libgdal-dev
         version: 3.8.4
-    - name: Pull and cache Oracle image
-      uses: docker/build-push-action@v5
-      with:
-        pull: true
-        load: true
-        tags: oracle-xe:21.3.0
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
-        build-args: |
-          BASE_IMAGE=container-registry.oracle.com/database/express:21.3.0-xe
     - name: Install and run Oracle
       run: |
         docker run -d --name oracledb \
           -e ORACLE_PWD=oracle \
           -v ${{ github.workspace }}/tests/data/oracle/init-db:/opt/oracle/scripts/startup \
           -p 1521:1521 \
-          oracle-xe:21.3.0
+          container-registry.oracle.com/database/express:21.3.0-xe
     - name: Install requirements 📦
       run: |
         pip3 install -r requirements.txt
