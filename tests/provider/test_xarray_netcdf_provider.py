@@ -1,8 +1,8 @@
 # =================================================================
 #
-# Authors: Tom Kralidis <tomkralidis@gmail.com>
+# Authors: Gregory Petrochenkov <gpetrochenkov@usgs.gov>
 #
-# Copyright (c) 2021 Tom Kralidis
+# Copyright (c) 2021 Gregory Petrochenkov
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -27,69 +27,63 @@
 #
 # =================================================================
 
+import logging
 import pytest
 
-from pygeoapi.provider.rasterio_ import RasterioProvider
+from pygeoapi.provider.base import ProviderQueryError
+from pygeoapi.provider.xarray_ import XarrayProvider
 
-from .util import get_test_file_path
+from ..util import get_test_file_path
 
-path = get_test_file_path(
-    'tests/data/CMC_glb_TMP_TGL_2_latlon.15x.15_2020081000_P000.grib2')
+
+LOGGER = logging.getLogger(__name__)
+
+path = get_test_file_path('tests/data/coads_sst.nc')
 
 
 @pytest.fixture()
 def config():
     return {
-        'name': 'rasterio',
+        'name': 'xarray',
         'type': 'coverage',
         'data': path,
-        'options': {
-            'DATA_ENCODING': 'COMPLEX_PACKING'
-        },
         'format': {
-            'name': 'GRIB',
-            'mimetype': 'application/x-grib2'
+            'name': 'netcdf',
+            'mimetype': 'application/x-netcdf'
         }
     }
 
 
 def test_provider(config):
-    p = RasterioProvider(config)
+    p = XarrayProvider(config)
 
-    assert p.num_bands == 1
-    assert len(p.axes) == 2
-    assert p.axes == ['Long', 'Lat']
+    assert len(p.fields) == 4
+    assert len(p.axes) == 3
+    assert p.axes == ['COADSX', 'COADSY', 'TIME']
 
 
-def test_schema(config):
-    p = RasterioProvider(config)
+def test_rangetype(config):
+    p = XarrayProvider(config)
 
     assert isinstance(p.fields, dict)
-    assert len(p.fields) == 1
-    assert p.fields['1']['title'] == 'Temperature [C]'
+    assert len(p.fields) == 4
+    assert p.fields['SST']['title'] == 'SEA SURFACE TEMPERATURE'
 
 
 def test_query(config):
-    p = RasterioProvider(config)
+    p = XarrayProvider(config)
 
     data = p.query()
     assert isinstance(data, dict)
 
-    data = p.query(format_='GRIB')
+    data = p.query(format_='NetCDF')
     assert isinstance(data, bytes)
 
-
-def test_query_bbox_reprojection(config):
-    config['options']['DATA_ENCODING'] = 'SIMPLE_PACKING'
-    config['data'] = get_test_file_path(
-        'tests/data/CMC_hrdps_continental_TMP_TGL_80_ps2.5km_2020102700_P005-00.grib2'  # noqa
-    )
-    p = RasterioProvider(config)
-
-    data = p.query(bbox=[-79, 45, -75, 49])
-
+    data = p.query(datetime_='2000-01-16')
     assert isinstance(data, dict)
-    assert data['domain']['axes']['x']['start'] == -79.0
-    assert data['domain']['axes']['x']['stop'] == -75.0
-    assert data['domain']['axes']['y']['start'] == 49.0
-    assert data['domain']['axes']['y']['stop'] == 45.0
+
+    data = p.query(datetime_='2000-01-16/2000-04-16')
+    assert isinstance(data, dict)
+
+    with pytest.raises(ProviderQueryError):
+        data = p.query(datetime_='2010-01-16')

@@ -27,9 +27,13 @@
 #
 # =================================================================
 
+import logging
 import pytest
 
 from pygeoapi.provider.socrata import SODAServiceProvider
+
+
+LOGGER = logging.getLogger(__name__)
 
 # we don't run these tests by default because they depend on
 # external servers which is slow and sometimes fails

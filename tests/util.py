@@ -27,12 +27,14 @@
 #
 # =================================================================
 
-import sys
+from contextlib import contextmanager
+from importlib import reload
 import logging
 import os.path
+from pathlib import Path
+import sys
 from urllib.parse import urlsplit
-from importlib import reload
-from contextlib import contextmanager
+
 
 from flask.testing import FlaskClient
 from starlette.testclient import TestClient as StarletteClient
@@ -44,14 +46,16 @@ from pygeoapi.api import APIRequest
 
 LOGGER = logging.getLogger(__name__)
 
+THISDIR = Path(__file__).resolve().parent
+
 
 def get_test_file_path(filename: str) -> str:
     """helper function to open test file safely"""
 
-    if os.path.isfile(filename):
-        return filename
+    if os.path.isfile(THISDIR / filename):
+        return (THISDIR / filename).as_posix()
     else:
-        return f'tests/{filename}'
+        return (THISDIR / f'tests/{filename}').as_posix()
 
 
 def mock_request(params: dict | None = None, data=None, **headers) -> Request:

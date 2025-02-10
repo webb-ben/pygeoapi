@@ -29,11 +29,14 @@
 # =================================================================
 
 import json
+import logging
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.geojson import GeoJSONProvider
 
+
+LOGGER = logging.getLogger(__name__)
 
 path = '/tmp/test.geojson'
 

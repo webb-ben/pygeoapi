@@ -30,11 +30,14 @@
 # =================================================================
 
 import copy
+import logging
+import pytest
 from unittest import mock
 
-import pytest
-
 from pygeoapi.provider.socrata import SODAServiceProvider
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture()

@@ -28,14 +28,17 @@
 # =================================================================
 
 import json
-import shutil
-
+import logging
 import pytest
+import shutil
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.tinydb_ import TinyDBCatalogueProvider
 
-from .util import get_test_file_path
+from ..util import get_test_file_path
+
+
+LOGGER = logging.getLogger(__name__)
 
 path = get_test_file_path('tests/data/open.canada.ca/sample-records.tinydb')
 

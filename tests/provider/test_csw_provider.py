@@ -27,10 +27,18 @@
 #
 # =================================================================
 
+import logging
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.csw_facade import CSWFacadeProvider
+
+
+LOGGER = logging.getLogger(__name__)
+
+# we don't run these tests by default because they depend on
+# external servers which is slow and sometimes fails
+pytest.skip("skipping live tests", allow_module_level=True)
 
 
 @pytest.fixture()

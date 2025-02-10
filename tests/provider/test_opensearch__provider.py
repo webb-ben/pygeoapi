@@ -29,12 +29,15 @@
 # =================================================================
 
 import json
-
+import logging
 from pygeofilter.parsers.cql2_json import parse as parse_cql2_json
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.opensearch_ import OpenSearchProvider
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture()

@@ -33,13 +33,11 @@ from datetime import datetime
 import time
 import unittest
 
-from pathlib import Path
 from requests import Session
 
 from pygeoapi.util import yaml_load
 
-THISDIR = Path(__file__).resolve().parent
-
+from .util import THISDIR
 
 # NOTE: this test is not executed in CI by default because it requires
 #       a running server
@@ -163,7 +161,7 @@ class APITest(unittest.TestCase):
 def get_abspath(filepath):
     """helper function absolute file access"""
 
-    return Path(THISDIR) / 'data' / 'admin' / filepath
+    return THISDIR / 'data' / 'admin' / filepath
 
 
 if __name__ == '__main__':

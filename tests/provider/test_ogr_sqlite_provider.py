@@ -32,11 +32,11 @@
 # Needs to be run like: python3 -m pytest
 
 import logging
-
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.ogr import OGRProvider
+
 
 LOGGER = logging.getLogger(__name__)
 

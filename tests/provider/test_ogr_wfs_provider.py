@@ -35,7 +35,6 @@
 
 import logging
 from unittest import mock
-
 import pytest
 
 from pygeoapi.provider.base import (ProviderItemNotFoundError)

@@ -31,9 +31,14 @@
 # Create testdata: python3 load_oracle_data.py
 
 import os
+import logging
 import pytest
+
 from pygeoapi.provider.base import ProviderInvalidQueryError
 from pygeoapi.provider.oracle import OracleProvider, DatabaseConnection
+
+
+LOGGER = logging.getLogger(__name__)
 
 USERNAME = os.environ.get("PYGEOAPI_ORACLE_USER", "geo_test")
 PASSWORD = os.environ.get("PYGEOAPI_ORACLE_PASSWD", "geo_test")
@@ -208,7 +213,7 @@ def config_private_synonym():
 def config_manipulator(config):
     return {
         **config,
-        "sql_manipulator": "tests.test_oracle_provider.SqlManipulator",
+        "sql_manipulator": "tests.provider.test_oracle_provider.SqlManipulator", # noqa
         "sql_manipulator_options": {"foo": "bar"},
     }
 

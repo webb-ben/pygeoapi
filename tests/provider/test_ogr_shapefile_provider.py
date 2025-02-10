@@ -32,15 +32,15 @@
 # Needs to be run like: python3 -m pytest
 
 import logging
-
-import pytest
 import pyproj
+import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.ogr import OGRProvider
 from pygeoapi.util import (
     CrsTransformSpec, get_transform_from_crs, geojson_to_geom,
 )
+
 
 LOGGER = logging.getLogger(__name__)
 

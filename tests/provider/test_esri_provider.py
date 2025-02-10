@@ -28,10 +28,14 @@
 # =================================================================
 
 from datetime import datetime
+import logging
 import pytest
 
 from pygeoapi.provider.esri import ESRIServiceProvider
 from pygeoapi.util import DATETIME_FORMAT
+
+
+LOGGER = logging.getLogger(__name__)
 
 TIME_FIELD = 'Date_Time'
 

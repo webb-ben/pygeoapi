@@ -34,7 +34,6 @@
 # https://sampleserver6.arcgisonline.com/arcgis/rest/services/CommunityAddressing/FeatureServer/0
 
 import logging
-
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError

@@ -40,13 +40,13 @@
 # See pygeoapi/provider/postgresql.py for instructions on setting up
 # test database in Docker
 
-import os
+from http import HTTPStatus
 import json
+import logging
+import os
+from pygeofilter.parsers.ecql import parse
 import pytest
 import pyproj
-from http import HTTPStatus
-
-from pygeofilter.parsers.ecql import parse
 
 from pygeoapi.api import API
 from pygeoapi.api.itemtypes import (
@@ -59,11 +59,13 @@ from pygeoapi.provider.base import (
 )
 from pygeoapi.provider.postgresql import PostgreSQLProvider
 import pygeoapi.provider.postgresql as postgresql_provider_module
-
 from pygeoapi.util import (yaml_load, geojson_to_geom,
                            get_transform_from_crs, get_crs_from_uri)
 
-from .util import get_test_file_path, mock_api_request
+from ..util import get_test_file_path, mock_api_request
+
+
+LOGGER = logging.getLogger(__name__)
 
 PASSWORD = os.environ.get('POSTGRESQL_PASSWORD', 'postgres')
 DEFAULT_CRS = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'

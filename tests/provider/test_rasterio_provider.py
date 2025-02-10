@@ -1,8 +1,8 @@
 # =================================================================
 #
-# Authors: Gregory Petrochenkov <gpetrochenkov@usgs.gov>
+# Authors: Tom Kralidis <tomkralidis@gmail.com>
 #
-# Copyright (c) 2021 Gregory Petrochenkov
+# Copyright (c) 2021 Tom Kralidis
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -27,87 +27,72 @@
 #
 # =================================================================
 
-from numpy import float64, int64
-
+import logging
 import pytest
-import xarray as xr
 
-from pygeoapi.provider.xarray_ import XarrayProvider
-from pygeoapi.util import json_serial
+from pygeoapi.provider.rasterio_ import RasterioProvider
 
-from .util import get_test_file_path
+from ..util import get_test_file_path
+
+LOGGER = logging.getLogger(__name__)
 
 path = get_test_file_path(
-    'data/analysed_sst.zarr')
+    'tests/data/CMC_glb_TMP_TGL_2_latlon.15x.15_2020081000_P000.grib2')
 
 
 @pytest.fixture()
 def config():
     return {
-        'name': 'zarr',
+        'name': 'rasterio',
         'type': 'coverage',
         'data': path,
+        'options': {
+            'DATA_ENCODING': 'COMPLEX_PACKING'
+        },
         'format': {
-             'name': 'zarr',
-             'mimetype': 'application/zip'
+            'name': 'GRIB',
+            'mimetype': 'application/x-grib2'
         }
     }
 
 
-@pytest.fixture()
-def config_no_time(tmp_path):
-    ds = xr.open_zarr(path)
-    ds = ds.sel(time=ds.time[0])
-    ds = ds.drop_vars('time')
-    ds.to_zarr(tmp_path / 'no_time.zarr')
-    return {
-        'name': 'zarr',
-        'type': 'coverage',
-        'data': str(tmp_path / 'no_time.zarr'),
-        'format': {'name': 'zarr', 'mimetype': 'application/zip'},
-    }
-
-
 def test_provider(config):
-    p = XarrayProvider(config)
+    p = RasterioProvider(config)
 
-    assert len(p.fields) == 4
-    assert len(p.axes) == 3
-    assert p.axes == ['lon', 'lat', 'time']
+    assert p.num_bands == 1
+    assert len(p.axes) == 2
+    assert p.axes == ['Long', 'Lat']
 
 
 def test_schema(config):
-    p = XarrayProvider(config)
+    p = RasterioProvider(config)
 
     assert isinstance(p.fields, dict)
-    assert len(p.fields) == 4
-    assert p.fields['analysed_sst']['title'] == 'analysed sea surface temperature'  # noqa
+    assert len(p.fields) == 1
+    assert p.fields['1']['title'] == 'Temperature [C]'
 
 
 def test_query(config):
-    p = XarrayProvider(config)
+    p = RasterioProvider(config)
 
     data = p.query()
     assert isinstance(data, dict)
 
-    data = p.query(format_='zarr')
+    data = p.query(format_='GRIB')
     assert isinstance(data, bytes)
 
 
-def test_numpy_json_serial():
-    d = int64(500_000_000_000)
-    assert json_serial(d) == 500_000_000_000
+def test_query_bbox_reprojection(config):
+    config['options']['DATA_ENCODING'] = 'SIMPLE_PACKING'
+    config['data'] = get_test_file_path(
+        'tests/data/CMC_hrdps_continental_TMP_TGL_80_ps2.5km_2020102700_P005-00.grib2'  # noqa
+    )
+    p = RasterioProvider(config)
 
-    d = float64(500.00000005)
-    assert json_serial(d) == 500.00000005
+    data = p.query(bbox=[-79, 45, -75, 49])
 
-
-def test_no_time(config_no_time):
-    p = XarrayProvider(config_no_time)
-
-    assert len(p.fields) == 4
-    assert p.axes == ['lon', 'lat']
-
-    coverage = p.query(format='json')
-
-    assert sorted(coverage['domain']['axes'].keys()) == ['x', 'y']
+    assert isinstance(data, dict)
+    assert data['domain']['axes']['x']['start'] == -79.0
+    assert data['domain']['axes']['x']['stop'] == -75.0
+    assert data['domain']['axes']['y']['start'] == 49.0
+    assert data['domain']['axes']['y']['stop'] == 45.0

@@ -35,7 +35,6 @@ from datetime import datetime
 import json
 import os
 
-from pathlib import Path
 import pytest
 
 from pygeoapi.util import yaml_load
@@ -44,9 +43,7 @@ from pygeoapi.admin import (
     get_resources, patch_config, patch_resource, post_resource,
     put_config, put_resource)
 
-from tests.util import mock_api_request
-
-THISDIR = Path(__file__).resolve().parent
+from tests.util import mock_api_request, THISDIR
 
 
 @pytest.fixture()
@@ -54,7 +51,7 @@ def admin_config_path(tmp_path, monkeypatch):
     # create a temporary config file because the test will modify it in place
     config_path = tmp_path / "config.yml"
     config_path.write_text(
-        (Path(THISDIR) / "pygeoapi-test-config-admin.yml").read_text()
+        (THISDIR / "pygeoapi-test-config-admin.yml").read_text()
     )
 
     # get_config() reads the config directly, so we need to patch os.environ
@@ -178,4 +175,4 @@ def test_resources_crud(monkeypatch, admin_config_path, openapi):
 def get_abspath(filepath):
     """helper function absolute file access"""
 
-    return Path(THISDIR) / 'data' / 'admin' / filepath
+    return THISDIR / 'data' / 'admin' / filepath

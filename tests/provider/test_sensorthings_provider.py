@@ -27,10 +27,14 @@
 #
 # =================================================================
 
+import logging
 import pytest
 
 from pygeoapi.provider.base import ProviderInvalidDataError
 from pygeoapi.provider.sensorthings import SensorThingsProvider
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture()

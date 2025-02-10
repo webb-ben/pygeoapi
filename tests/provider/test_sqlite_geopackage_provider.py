@@ -33,12 +33,16 @@
 # In eclipse we need to set PYGEOAPI_CONFIG, Run>Debug Configurations>
 # (Arguments as py.test and set external variables to the correct config path)
 
+import logging
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.sqlite import SQLiteGPKGProvider
 
-from .util import get_test_file_path
+from ..util import get_test_file_path
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture()

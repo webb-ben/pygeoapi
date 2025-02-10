@@ -27,10 +27,14 @@
 #
 # =================================================================
 
+import logging
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.mongo import MongoProvider
+
+
+LOGGER = logging.getLogger(__name__)
 
 monogourl = 'mongodb://localhost:27017/testdb'
 mongocollection = 'testplaces'

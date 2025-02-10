@@ -27,26 +27,46 @@
 #
 # =================================================================
 
+import logging
+from numpy import float64, int64
 import pytest
+import xarray as xr
 
-from pygeoapi.provider.base import ProviderQueryError
 from pygeoapi.provider.xarray_ import XarrayProvider
+from pygeoapi.util import json_serial
 
-from .util import get_test_file_path
+from ..util import get_test_file_path
 
-path = get_test_file_path('tests/data/coads_sst.nc')
+
+LOGGER = logging.getLogger(__name__)
+
+path = get_test_file_path('data/analysed_sst.zarr')
 
 
 @pytest.fixture()
 def config():
     return {
-        'name': 'xarray',
+        'name': 'zarr',
         'type': 'coverage',
         'data': path,
         'format': {
-            'name': 'netcdf',
-            'mimetype': 'application/x-netcdf'
+             'name': 'zarr',
+             'mimetype': 'application/zip'
         }
+    }
+
+
+@pytest.fixture()
+def config_no_time(tmp_path):
+    ds = xr.open_zarr(path)
+    ds = ds.sel(time=ds.time[0])
+    ds = ds.drop_vars('time')
+    ds.to_zarr(tmp_path / 'no_time.zarr')
+    return {
+        'name': 'zarr',
+        'type': 'coverage',
+        'data': str(tmp_path / 'no_time.zarr'),
+        'format': {'name': 'zarr', 'mimetype': 'application/zip'},
     }
 
 
@@ -55,15 +75,15 @@ def test_provider(config):
 
     assert len(p.fields) == 4
     assert len(p.axes) == 3
-    assert p.axes == ['COADSX', 'COADSY', 'TIME']
+    assert p.axes == ['lon', 'lat', 'time']
 
 
-def test_rangetype(config):
+def test_schema(config):
     p = XarrayProvider(config)
 
     assert isinstance(p.fields, dict)
     assert len(p.fields) == 4
-    assert p.fields['SST']['title'] == 'SEA SURFACE TEMPERATURE'
+    assert p.fields['analysed_sst']['title'] == 'analysed sea surface temperature'  # noqa
 
 
 def test_query(config):
@@ -72,14 +92,24 @@ def test_query(config):
     data = p.query()
     assert isinstance(data, dict)
 
-    data = p.query(format_='NetCDF')
+    data = p.query(format_='zarr')
     assert isinstance(data, bytes)
 
-    data = p.query(datetime_='2000-01-16')
-    assert isinstance(data, dict)
 
-    data = p.query(datetime_='2000-01-16/2000-04-16')
-    assert isinstance(data, dict)
+def test_numpy_json_serial():
+    d = int64(500_000_000_000)
+    assert json_serial(d) == 500_000_000_000
 
-    with pytest.raises(ProviderQueryError):
-        data = p.query(datetime_='2010-01-16')
+    d = float64(500.00000005)
+    assert json_serial(d) == 500.00000005
+
+
+def test_no_time(config_no_time):
+    p = XarrayProvider(config_no_time)
+
+    assert len(p.fields) == 4
+    assert p.axes == ['lon', 'lat']
+
+    coverage = p.query(format='json')
+
+    assert sorted(coverage['domain']['axes'].keys()) == ['x', 'y']

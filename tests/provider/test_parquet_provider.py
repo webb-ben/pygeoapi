@@ -27,18 +27,21 @@
 #
 # =================================================================
 
+import logging
 import pytest
 
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.parquet import ParquetProvider
 
-from .util import get_test_file_path
+from ..util import get_test_file_path
 
-path = get_test_file_path(
-    'data/random.parquet')
 
-path_nogeom = get_test_file_path(
-    'data/random_nogeom.parquet')
+LOGGER = logging.getLogger(__name__)
+
+
+path = get_test_file_path('data/random.parquet')
+
+path_nogeom = get_test_file_path('data/random_nogeom.parquet')
 
 
 @pytest.fixture()

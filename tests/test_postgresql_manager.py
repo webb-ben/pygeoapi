@@ -36,10 +36,11 @@ import pytest
 from werkzeug.wrappers import Request
 from werkzeug.test import create_environ
 
-from .util import get_test_file_path
 from pygeoapi.api import API, APIRequest
 import pygeoapi.api.processes as processes_api
 from pygeoapi.util import yaml_load
+
+from .util import get_test_file_path
 
 
 @pytest.fixture()
