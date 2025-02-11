@@ -30,6 +30,7 @@
 # =================================================================
 
 from datetime import datetime
+import pytest
 import time
 import unittest
 
@@ -37,10 +38,11 @@ from requests import Session
 
 from pygeoapi.util import yaml_load
 
-from .util import THISDIR
+from tests.util import THISDIR
 
-# NOTE: this test is not executed in CI by default because it requires
-#       a running server
+# we don't run these tests by default because they depend on
+# external servers which is slow and sometimes fails
+pytest.skip("skipping live tests", allow_module_level=True)
 
 
 class APITest(unittest.TestCase):
