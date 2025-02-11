@@ -46,7 +46,7 @@ from pygeoapi.api import APIRequest
 
 LOGGER = logging.getLogger(__name__)
 
-THISDIR = Path(__file__).resolve().parent
+THISDIR = Path(__file__).parent.resolve()
 
 
 def get_test_file_path(filename: str) -> str:
