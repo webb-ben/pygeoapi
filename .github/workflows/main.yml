@@ -119,14 +119,12 @@ jobs:
       run: |
         pytest tests/api
         pytest tests/test_config.py
-        pytest tests/test_csv__formatter.py
         pytest tests/test_django.py
-        pytest tests/test_postgresql_manager.py
         pytest tests/test_openapi.py
-        pytest tests/test_tinydb_manager_for_parallel_requests.py
         pytest tests/test_util.py
-        pytest tests/test_admin_api.py
+        pytest tests/formatter
         pytest tests/provider
+        pytest tests/process/manager
     - name: failed tests 🚩
       if: ${{ failure() }}
       run: |
