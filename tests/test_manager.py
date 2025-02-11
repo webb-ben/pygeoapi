@@ -78,7 +78,7 @@ def test_get_processor_raises_exception(config):
 
 def test_get_job_result_binary(config):
     manager = get_manager(config)
-    nc_file = get_test_file_path("tests/data/coads_sst.nc")
+    nc_file = get_test_file_path("data/coads_sst.nc")
     job_id = "15eeae38-608c-11ef-81c8-0242ac130002"
     job_metadata = {
         "type": "process",

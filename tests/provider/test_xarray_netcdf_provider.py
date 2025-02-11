@@ -38,7 +38,7 @@ from ..util import get_test_file_path
 
 LOGGER = logging.getLogger(__name__)
 
-path = get_test_file_path('tests/data/coads_sst.nc')
+path = get_test_file_path('data/coads_sst.nc')
 
 
 @pytest.fixture()

@@ -41,7 +41,7 @@ from ..util import get_test_file_path
 
 LOGGER = logging.getLogger(__name__)
 
-path = get_test_file_path('tests/data/canada-hydat-daily-mean-02HC003.tinydb')
+path = get_test_file_path('data/canada-hydat-daily-mean-02HC003.tinydb')
 
 
 @pytest.fixture()

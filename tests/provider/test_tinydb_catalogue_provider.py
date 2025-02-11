@@ -40,7 +40,7 @@ from ..util import get_test_file_path
 
 LOGGER = logging.getLogger(__name__)
 
-path = get_test_file_path('tests/data/open.canada.ca/sample-records.tinydb')
+path = get_test_file_path('data/open.canada.ca/sample-records.tinydb')
 
 
 @pytest.fixture()
