@@ -33,7 +33,7 @@ import pytest
 from pygeoapi.provider.base import ProviderItemNotFoundError
 from pygeoapi.provider.parquet import ParquetProvider
 
-from ..util import get_test_file_path
+from tests.util import get_test_file_path
 
 
 LOGGER = logging.getLogger(__name__)

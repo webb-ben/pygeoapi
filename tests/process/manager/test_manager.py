@@ -33,7 +33,7 @@ import pytest
 from pygeoapi.process.base import UnknownProcessError, JobNotFoundError
 from pygeoapi.process.manager.base import get_manager
 
-from .util import get_test_file_path
+from tests.util import get_test_file_path
 
 
 @pytest.fixture()

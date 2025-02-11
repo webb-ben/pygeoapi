@@ -35,7 +35,7 @@ import xarray as xr
 from pygeoapi.provider.xarray_ import XarrayProvider
 from pygeoapi.util import json_serial
 
-from ..util import get_test_file_path
+from tests.util import get_test_file_path
 
 
 LOGGER = logging.getLogger(__name__)

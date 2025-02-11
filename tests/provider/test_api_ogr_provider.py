@@ -37,7 +37,7 @@ from pygeoapi.api import API
 from pygeoapi.api.itemtypes import get_collection_item, get_collection_items
 from pygeoapi.util import yaml_load, geojson_to_geom
 
-from ..util import get_test_file_path, mock_api_request
+from tests.util import get_test_file_path, mock_api_request
 
 
 LOGGER = logging.getLogger(__name__)

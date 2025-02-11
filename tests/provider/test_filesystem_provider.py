@@ -32,7 +32,7 @@ import pytest
 
 from pygeoapi.provider.filesystem import FileSystemProvider
 
-from ..util import THISDIR
+from tests.util import THISDIR
 
 
 LOGGER = logging.getLogger(__name__)
