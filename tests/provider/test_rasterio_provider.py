@@ -37,7 +37,7 @@ from tests.util import get_test_file_path
 LOGGER = logging.getLogger(__name__)
 
 path = get_test_file_path(
-    'tests/data/CMC_glb_TMP_TGL_2_latlon.15x.15_2020081000_P000.grib2')
+    'data/CMC_glb_TMP_TGL_2_latlon.15x.15_2020081000_P000.grib2')
 
 
 @pytest.fixture()
