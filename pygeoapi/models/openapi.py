@@ -40,4 +40,4 @@ class SupportedFormats(Enum):
 
 
 class OAPIFormat(BaseModel):
-    __root__: SupportedFormats = SupportedFormats.YAML
+    root: SupportedFormats = SupportedFormats.YAML
