@@ -17,11 +17,12 @@ on:
 
 jobs:
   main:
-    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        include:
-          - python-version: '3.10'
+        python-version: ['3.10']
+        ubuntu-version: ['22.04', '24.04']
+
+    runs-on: ubuntu-${{ matrix.ubuntu-version }}
     env:
       PYGEOAPI_CONFIG: "$(pwd)/pygeoapi-config.yml"
     
@@ -92,6 +93,7 @@ jobs:
         docker run -d --name oracledb -e ORACLE_PWD=oracle -v ${{ github.workspace }}/tests/data/oracle/init-db:/opt/oracle/scripts/startup -p 1521:1521 container-registry.oracle.com/database/express:21.3.0-xe
     - name: Install requirements 📦
       run: |
+        echo "::group::pip install"
         pip3 install -r requirements.txt
         pip3 install -r requirements-admin.txt
         pip3 install -r requirements-starlette.txt
@@ -102,6 +104,10 @@ jobs:
         python3 setup.py install
         pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
         #pip3 install --upgrade rasterio==1.1.8
+        echo "::endgroup::"
+        echo "::group::pip dependencies"
+        pip3 freeze
+        echo "::endgroup::"
     - name: setup test data ⚙️
       run: |
         python3 tests/load_es_data.py tests/data/ne_110m_populated_places_simple.geojson geonameid
