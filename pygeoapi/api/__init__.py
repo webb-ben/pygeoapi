@@ -66,7 +66,8 @@ from pygeoapi.util import (
     CrsTransformSpec, TEMPLATES, UrlPrefetcher, dategetter,
     filter_dict_by_key_value, get_api_rules, get_base_url,
     get_provider_by_type, get_provider_default, get_typed_value,
-    get_crs_from_uri, get_supported_crs_list, render_j2_template, to_json
+    get_crs_from_uri, get_supported_crs_list, render_j2_template, to_json,
+    get_choice_from_headers
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -150,7 +151,9 @@ def apply_gzip(headers: dict, content: Union[str, bytes]) -> Union[str, bytes]:
     Compress content if requested in header.
     """
     charset = CHARSET[0]
-    if F_GZIP in headers.get('Content-Encoding', []):
+
+    choices_ = get_choice_from_headers(headers, 'content-encoding', all=True)
+    if choices_ and F_GZIP in choices_:
         try:
             if isinstance(content, bytes):
                 # bytes means Content-Type needs to be set upstream
@@ -305,16 +308,16 @@ class APIRequest:
             raise ValueError(f"{self.__class__.__name__} must be initialized"
                              f"with a list of valid supported locales")
 
-        for func, mapping in ((l10n.locale_from_params, self._args),
-                              (l10n.locale_from_headers, headers)):
-            loc_str = func(mapping)
+        for (mapping, field) in ((self._args, l10n.QUERY_PARAM),
+                                 (headers, 'accept-language')):
+            loc_str = get_choice_from_headers(mapping, field)
             if loc_str:
                 if not raw:
                     # This is the first-found locale string: set as raw
                     raw = loc_str
                 # Check if locale string is a good match for the UI
                 loc = l10n.best_match(loc_str, supported_locales)
-                is_override = func is l10n.locale_from_params
+                is_override = field is l10n.QUERY_PARAM
                 if loc != default_locale or is_override:
                     return raw, loc
 
@@ -335,17 +338,15 @@ class APIRequest:
             return format_
 
         # Format not specified: get from Accept headers (MIME types)
-        # e.g. format_ = 'text/html'
-        h = headers.get('accept', headers.get('Accept', '')).strip() # noqa
+        # e.g. Accept: 'text/html;q=0.5,application/ld+json'
         (fmts, mimes) = zip(*FORMAT_TYPES.items())
-        # basic support for complex types (i.e. with "q=0.x")
-        for type_ in (t.split(';')[0].strip() for t in h.split(',') if t):
+        for type_ in get_choice_from_headers(headers, 'accept', all=True) or []:
             if type_ in mimes:
                 idx_ = mimes.index(type_)
-                format_ = fmts[idx_]
-                break
-
+                return fmts[idx_]
+        
         return format_ or None
+
 
     @property
     def data(self) -> bytes:
