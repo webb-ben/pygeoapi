@@ -17,11 +17,12 @@ on:
 
 jobs:
   main:
-    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        include:
-          - python-version: '3.10'
+        python-version: ['3.10']
+        ubuntu-version: ['22.04', '24.04']
+
+    runs-on: ubuntu-${{ matrix.ubuntu-version }}
     env:
       PYGEOAPI_CONFIG: "$(pwd)/pygeoapi-config.yml"
     
@@ -102,6 +103,9 @@ jobs:
         python3 setup.py install
         pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
         #pip3 install --upgrade rasterio==1.1.8
+        echo "::group:: pip dependencies"
+        pip3 freeze
+        echo "::endgroup::"
     - name: setup test data ⚙️
       run: |
         python3 tests/load_es_data.py tests/data/ne_110m_populated_places_simple.geojson geonameid
