@@ -36,7 +36,7 @@
 from copy import deepcopy
 import logging
 
-from sqlalchemy.sql import func, select
+from sqlalchemy.sql import func, select, desc
 from sqlalchemy.orm import Session
 from pygeoapi.models.provider.base import (
     TileSetMetadata, TileMatrixSetEnum, LinkType)
@@ -65,11 +65,15 @@ class MVTPostgreSQLProvider(BaseMVTProvider, PostgreSQLProvider):
         :returns: pygeoapi.provider.MVT.MVTPostgreSQLProvider
         """
         pg_def = deepcopy(provider_def)
-        # delete the zoom option before initializing the PostgreSQL provider
-        # that provider breaks otherwise
+        # delete dictionary options before initializing the 
+        # PostgreSQL provider which breaks otherwise
         del pg_def['options']['zoom']
+        del pg_def['options']['limits']
         PostgreSQLProvider.__init__(self, pg_def)
         BaseMVTProvider.__init__(self, provider_def)
+
+        limits = provider_def['options'].get('limits', {})
+        self.max_items_per_tile = limits.get('max_items', 0)
 
     def get_fields(self):
         """
@@ -169,12 +173,24 @@ class MVTPostgreSQLProvider(BaseMVTProvider, PostgreSQLProvider):
         mvtrow = (
             select(mvtgeom, *self.fields.values())
             .filter(geom_filter)
-            .cte('mvtrow')
-            .table_valued()
         )
 
+        if self.max_items_per_tile:
+            bbox_area = (
+                (func.ST_XMax(geom_column) - func.ST_XMin(geom_column)) *
+                (func.ST_YMax(geom_column) - func.ST_YMin(geom_column))
+            ).label('bbox_area')
+
+            mvtrow = (
+                mvtrow
+                .order_by(desc(bbox_area))
+                .limit(self.max_items_per_tile)
+            )
+
         mvtquery = select(
-            func.ST_AsMVT(mvtrow, layer)
+            func.ST_AsMVT(
+                mvtrow.cte('mvtrow').table_valued(), layer
+            )
         )
 
         with Session(self._engine) as session:
