@@ -17,13 +17,15 @@ on:
 
 jobs:
   main:
-    runs-on: ubuntu-22.04
     strategy:
       matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
         include:
           - python-version: '3.10'
     env:
       PYGEOAPI_CONFIG: "$(pwd)/pygeoapi-config.yml"
+
+    runs-on: ${{ matrix.os }}
 
     services:
       postgres:
@@ -115,6 +117,8 @@ jobs:
         docker run -d --name oracledb -e ORACLE_PWD=oracle -v ${{ github.workspace }}/tests/data/oracle/init-db:/opt/oracle/scripts/startup -p 1521:1521 container-registry.oracle.com/database/express:21.3.0-xe
     - name: Install requirements 📦
       run: |
+        echo "Installing dependencies"
+        echo "::group::Install via pip"
         pip3 install -r requirements.txt
         pip3 install -r requirements-admin.txt
         pip3 install -r requirements-starlette.txt
@@ -122,11 +126,24 @@ jobs:
         pip3 install -r requirements-provider.txt
         pip3 install -r requirements-manager.txt
         pip3 install -r requirements-django.txt
-        python3 setup.py install
-        pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
         #pip3 install --upgrade rasterio==1.1.8
+        echo "::endgroup::"
+        echo "::group::Install pygeoapi"
+        python3 setup.py install
+        echo "::endgroup::"
+        echo "::group::Install GDAL"
+        pip3 install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+        echo "::endgroup::"
+        echo "::group::Installed packages"
+        pip3 freeze
+        echo "::endgroup::"
     - name: setup test data ⚙️
       run: |
+        echo "Setting up test data..."
+        echo "::group::Backend services status"
+        docker ps
+        echo "::endgroup::"
+        echo "::group::Upsert test data"
         python3 tests/load_es_data.py tests/data/ne_110m_populated_places_simple.geojson geonameid
         python3 tests/load_opensearch_data.py tests/data/ne_110m_populated_places_simple.geojson geonameid
         python3 tests/load_mongo_data.py tests/data/ne_110m_populated_places_simple.geojson
@@ -135,8 +152,8 @@ jobs:
         psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/dummy_types_data.sql
         psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/postgres_manager_full_structure.backup.sql
         mysql -h 127.0.0.1 -P 3306 -u root -p'mysql' test_geo_app < tests/data/mysql_data.sql
-        docker ps
         python3 tests/load_oracle_data.py
+        echo "::endgroup::"
     - name: run unit tests ⚙️
       env:
         POSTGRESQL_PASSWORD: ${{ secrets.DatabasePassword || 'postgres' }}
@@ -181,7 +198,3 @@ jobs:
         pytest tests/test_xarray_netcdf_provider.py
         pytest tests/test_xarray_zarr_provider.py
         pytest tests/test_admin_api.py
-    - name: failed tests 🚩
-      if: ${{ failure() }}
-      run: |
-        pip3 list -v
