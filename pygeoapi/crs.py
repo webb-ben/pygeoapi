@@ -286,7 +286,7 @@ def transform_bbox(bbox: list, from_crs: str, to_crs: str) -> list:
 
     :param bbox: list of coordinates in 'from_crs' projection
     :param from_crs: CRS to transform from
-    :param to_crs: CRSto transform to
+    :param to_crs: CRS to transform to
     :raises `CRSError`: Error raised if no CRS could be identified from an
         URI.
 
