@@ -307,10 +307,12 @@ def get_collection_edr_query(api: API, request: APIRequest,
     if not request.is_valid(dataset_formatters.keys()):
         return api.get_format_exception(request)
 
+    LOGGER.debug('Processing query parameters')
+
+    LOGGER.debug('Processing crs parameter')
     crs_transform_spec = None
     query_crs_uri = request.params.get('crs')
     if query_crs_uri is not None:
-        LOGGER.debug('Processing crs parameter')
         try:
             crs_transform_spec = create_crs_transform_spec(
                 provider_def, query_crs_uri
@@ -321,8 +323,6 @@ def get_collection_edr_query(api: API, request: APIRequest,
                 HTTPStatus.BAD_REQUEST, headers, request.format,
                 'InvalidParameterValue', msg)
         set_content_crs_header(headers, provider_def, query_crs_uri)
-
-    LOGGER.debug('Processing query parameters')
 
     LOGGER.debug('Processing datetime parameter')
     datetime_ = request.params.get('datetime')
