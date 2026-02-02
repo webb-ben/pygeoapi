@@ -61,7 +61,7 @@ from pygeoapi.util import (get_dataset_formatters, get_typed_value,
                            filter_dict_by_key_value)
 
 from . import (APIRequest, API, F_COVERAGEJSON, F_HTML, F_JSON, F_JSONLD,
-               validate_datetime, validate_bbox)
+               FORMAT_TYPES, validate_datetime, validate_bbox)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -126,23 +126,23 @@ def get_collection_edr_instances(api: API, request: APIRequest,
         instance_dict = {
             'id': instance,
             'links': [{
-                'href': f'{uri}/instances/{instance}?f={F_JSON}',
+                'type': FORMAT_TYPES[F_JSON],
                 'rel': request.get_linkrel(F_JSON),
-                'type': 'application/json'
+                'href': f'{uri}/instances/{instance}?f={F_JSON}'
             }, {
-                'href': f'{uri}/instances/{instance}?f={F_HTML}',
+                'type': FORMAT_TYPES[F_HTML],
                 'rel': request.get_linkrel(F_HTML),
-                'type': 'text/html'
+                'href': f'{uri}/instances/{instance}?f={F_HTML}'
             }, {
-                'href': f'{uri}?f={F_HTML}',
+                'type': FORMAT_TYPES[F_HTML],
                 'rel': 'collection',
                 'title': collections[dataset]['title'],
-                'type': 'text/html'
+                'href': f'{uri}?f={F_HTML}'
             }, {
-                'href': f'{uri}?f={F_JSON}',
+                'type': FORMAT_TYPES[F_JSON],
                 'rel': 'collection',
                 'title': collections[dataset]['title'],
-                'type': 'application/json'
+                'href': f'{uri}?f={F_JSON}'
             }],
             'data_queries': {}
         }
@@ -151,54 +151,66 @@ def get_collection_edr_instances(api: API, request: APIRequest,
             if qt == 'instances':
                 continue
 
-            data_query = {
-                'link': {
-                    'href': f'{uri}/instances/{instance}/{qt}?f={request.format}',  # noqa
-                    'rel': 'data',
-                    'title': f'{qt} query'
-                }
+            link = {
+                'title': f'{qt} query',
+                'rel': 'data',
+                'href': f'{uri}/instances/{instance}/{qt}?f={request.format}',
             }
 
-            if request.format is not None and request.format == 'json':
-                data_query['link']['type'] = 'application/vnd.cov+json'
+            if request.format == F_COVERAGEJSON:
+                link['type'] = 'application/vnd.cov+json'
 
-            instance_dict['data_queries'][qt] = data_query
+            instance_dict['data_queries'][qt] = {
+                'link': link
+            }
 
         data['instances'].append(instance_dict)
 
         if instance_id is not None:
             data = data['instances'][0]
             data.pop('instances', None)
-            links_uri = f'{uri}/instances/{instance_id}'
-        else:
-            links_uri = f'{uri}/instances'
 
-        if instance_id is None:
-            data['links'].extend([{
-                'href': f'{links_uri}?f={F_JSON}',
-                'rel': request.get_linkrel(F_JSON),
-                'type': 'application/json'
-            }, {
-                'href': f'{links_uri}?f={F_HTML}',
-                'rel': request.get_linkrel(F_HTML),
-                'type': 'text/html'
-            }])
+    serialized_query_params = ''
+    for k, v in request.params.items():
+        if k != 'f':
+            serialized_query_params += '&'
+            serialized_query_params += urllib.parse.quote(k, safe='')
+            serialized_query_params += '='
+            serialized_query_params += urllib.parse.quote(str(v), safe=',')
+
+    instance_uri = f'{uri}/instances'
+    if instance_id is not None:
+        instance_uri += f'/{instance_id}'
+
+    data['links'] = [{
+        'type': FORMAT_TYPES[F_HTML],
+        'rel': 'collection',
+        'title': collections[dataset]['title'],
+        'href': f'{uri}?f={F_HTML}'
+    }, {
+        'type': FORMAT_TYPES[F_JSON],
+        'rel': 'collection',
+        'title': collections[dataset]['title'],
+        'href': f'{uri}?f={F_JSON}',
+    }, {
+        'type': FORMAT_TYPES[F_HTML],
+        'rel': request.get_linkrel(F_HTML),
+        'title': l10n.translate('This document as HTML', request.locale),
+        'href': f'{instance_uri}?f={F_HTML}{serialized_query_params}'
+    }, {
+        'type': FORMAT_TYPES[F_JSON],
+        'rel': request.get_linkrel(F_JSON),
+        'title': l10n.translate('This document as JSON', request.locale),
+        'href': f'{instance_uri}?f={F_JSON}{serialized_query_params}'
+    }, {
+        'type': FORMAT_TYPES[F_JSONLD],
+        'rel': request.get_linkrel(F_JSONLD),
+        'title': l10n.translate('This document as JSON-LD', request.locale),
+        'href': f'{instance_uri}?f={F_JSONLD}{serialized_query_params}'
+    }]
 
     if request.format == F_HTML:  # render
         tpl_config = api.get_dataset_templates(dataset)
-
-        serialized_query_params = ''
-        for k, v in request.params.items():
-            if k != 'f':
-                serialized_query_params += '&'
-                serialized_query_params += urllib.parse.quote(k, safe='')
-                serialized_query_params += '='
-                serialized_query_params += urllib.parse.quote(str(v), safe=',')
-
-        if instance_id is None:
-            uri = f'{uri}/instances'
-        else:
-            uri = f'{uri}/instances/{instance_id}'
 
         data['query_type'] = 'instances'
         data['query_path'] = uri
@@ -206,35 +218,13 @@ def get_collection_edr_instances(api: API, request: APIRequest,
         data['description'] = collections[dataset]['description']
         data['keywords'] = collections[dataset]['keywords']
         data['collections_path'] = api.get_collections_url()
+        data['dataset_path'] = instance_uri
 
-        if instance_id is None:
-            data['dataset_path'] = data['collections_path'] + '/' + uri.split('/')[-2]  # noqa
-            template = 'collections/edr/instances.html'
-        else:
-            data['dataset_path'] = data['collections_path'] + '/' + uri.split('/')[-3]  # noqa
-            template = 'collections/edr/instance.html'
-
-        data['links'] = [{
-            'rel': 'collection',
-            'title': collections[dataset]['title'],
-            'href': f"{data['dataset_path']}?f={F_JSON}",
-            'type': 'text/html'
-        }, {
-            'rel': 'collection',
-            'title': collections[dataset]['title'],
-            'href': f"{data['dataset_path']}?f={F_HTML}",
-            'type': 'application/json'
-        }, {
-            'type': 'application/json',
-            'rel': 'alternate',
-            'title': l10n.translate('This document as JSON', request.locale),
-            'href': f'{uri}?f={F_JSON}{serialized_query_params}'
-        }, {
-            'type': 'application/ld+json',
-            'rel': 'alternate',
-            'title': l10n.translate('This document as JSON-LD', request.locale),  # noqa
-            'href': f'{uri}?f={F_JSONLD}{serialized_query_params}'
-        }]
+        template = (
+            'collections/edr/instances.html'
+            if instance_id is None else
+            'collections/edr/instance.html'
+        )
 
         content = render_j2_template(api.tpl_config, tpl_config, template,
                                      data, api.default_locale)
@@ -412,65 +402,78 @@ def get_collection_edr_query(api: API, request: APIRequest,
             HTTPStatus.BAD_REQUEST, headers, request.format,
             'InvalidParameterValue', str(err))
 
-    query_args = dict(
-        query_type=query_type,
-        instance=instance,
-        format_=request.format,
-        datetime_=datetime_,
-        select_properties=parameternames,
-        wkt=wkt,
-        z=z,
-        bbox=bbox,
-        within=within,
-        within_units=within_units,
-        corridor_width=corridor_width,
-        width_units=width_units,
-        corridor_height=corridor_height,
-        height_units=height_units,
-        limit=limit,
-        location_id=location_id,
-        crs_transform_spec=crs_transform_spec
-    )
-
     try:
-        data = p.query(**query_args)
+        data = p.query(
+            query_type=query_type,
+            instance=instance,
+            format_=request.format,
+            datetime_=datetime_,
+            select_properties=parameternames,
+            wkt=wkt,
+            z=z,
+            bbox=bbox,
+            within=within,
+            within_units=within_units,
+            corridor_width=corridor_width,
+            width_units=width_units,
+            corridor_height=corridor_height,
+            height_units=height_units,
+            limit=limit,
+            location_id=location_id,
+            crs_transform_spec=crs_transform_spec
+        )
     except ProviderGenericError as err:
         return api.get_exception(
             err.http_status_code, headers, request.format,
             err.ogc_exception_code, err.message)
 
+    uri = f'{api.get_collections_url()}/{dataset}/{query_type}'
+    if location_id is not None:
+        uri += f'/{location_id}'
+
+    serialized_query_params = ''
+    for k, v in request.params.items():
+        if k != 'f':
+            serialized_query_params += '&'
+            serialized_query_params += urllib.parse.quote(k, safe='')
+            serialized_query_params += '='
+            serialized_query_params += urllib.parse.quote(str(v), safe=',')
+
+    data['links'] = [{
+        'rel': 'collection',
+        'title': collections[dataset]['title'],
+        'href': f'{api.get_collections_url()}/{dataset}'
+    }, {
+        'type': FORMAT_TYPES[F_HTML],
+        'rel': request.get_linkrel(F_HTML),
+        'title': l10n.translate('This document as HTML', request.locale),
+        'href': f'{uri}?f={F_HTML}{serialized_query_params}'
+    }, {
+        'type': 'application/prs.coverage+json',
+        'rel': request.get_linkrel(F_COVERAGEJSON),
+        'title': l10n.translate('This document as CoverageJSON', request.locale),  # noqa
+        'href': f'{uri}?f={F_COVERAGEJSON}{serialized_query_params}'
+    }, {
+        'type': FORMAT_TYPES[F_JSONLD],
+        'rel': request.get_linkrel(F_JSONLD),
+        'title': l10n.translate('This document as JSON-LD', request.locale),
+        'href': f'{uri}?f={F_JSONLD}{serialized_query_params}'
+    }]
+
+    for key, value in dataset_formatters.items():
+        data['links'].append({
+            'type': value.mimetype,
+            'rel': 'alternate',
+            'title': f'This document as {key}',
+            'href': f'{uri}?f={value.name}{serialized_query_params}'
+        })
+
     if request.format == F_HTML:  # render
         tpl_config = api.get_dataset_templates(dataset)
 
-        uri = f'{api.get_collections_url()}/{dataset}/{query_type}'
-        serialized_query_params = ''
-        for k, v in request.params.items():
-            if k != 'f':
-                serialized_query_params += '&'
-                serialized_query_params += urllib.parse.quote(k, safe='')
-                serialized_query_params += '='
-                serialized_query_params += urllib.parse.quote(str(v), safe=',')
-
         data['query_type'] = query_type.capitalize()
         data['query_path'] = uri
-        data['dataset_path'] = '/'.join(uri.split('/')[:-1])
         data['collections_path'] = api.get_collections_url()
-
-        data['links'] = [{
-            'rel': 'collection',
-            'title': collections[dataset]['title'],
-            'href': data['dataset_path']
-        }, {
-            'type': 'application/prs.coverage+json',
-            'rel': request.get_linkrel(F_COVERAGEJSON),
-            'title': l10n.translate('This document as CoverageJSON', request.locale),  # noqa
-            'href': f'{uri}?f={F_COVERAGEJSON}{serialized_query_params}'
-        }, {
-            'type': 'application/ld+json',
-            'rel': 'alternate',
-            'title': l10n.translate('This document as JSON-LD', request.locale),  # noqa
-            'href': f'{uri}?f={F_JSONLD}{serialized_query_params}'
-        }]
 
         content = render_j2_template(api.tpl_config, tpl_config,
                                      'collections/edr/query.html', data,

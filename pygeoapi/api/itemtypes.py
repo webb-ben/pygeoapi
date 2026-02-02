@@ -617,7 +617,6 @@ def get_collection_items(
         if offset > 0:
             prev_link = True
 
-    print(request.format)
     if prev_link:
         prev = max(0, offset - limit)
         url = f'{uri}?offset={prev}{serialized_query_params}'
