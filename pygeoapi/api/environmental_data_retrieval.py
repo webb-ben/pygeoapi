@@ -478,6 +478,12 @@ def get_collection_edr_query(api: API, request: APIRequest,
         content = render_j2_template(api.tpl_config, tpl_config,
                                      'collections/edr/query.html', data,
                                      api.default_locale)
+    elif request.format == F_JSONLD:
+        content = to_json(
+            {'@context': 'https://covjson.org/context.jsonld', **data},
+            api.pretty_print
+        )
+
     elif request.format in [df.f for df in dataset_formatters.values()]:
         formatter = [v for v in dataset_formatters.values() if
                      v.f == request.format][0]
