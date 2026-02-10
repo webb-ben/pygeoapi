@@ -60,7 +60,7 @@ from pygeoapi.process.base import (
 from pygeoapi.process.manager.base import get_manager, Subscriber
 from pygeoapi.util import (
     json_serial, render_j2_template, JobStatus, RequestedProcessExecutionMode,
-    to_json, DATETIME_FORMAT)
+    to_json, DATETIME_FORMAT, get_from_headers)
 
 from . import APIRequest, API, SYSTEM_LOCALE
 
@@ -518,7 +518,9 @@ def execute_process(api: API, request: APIRequest,
         if isinstance(response, (list, dict)):
             response2 = to_json(response, pretty_print_)
 
-    if (headers.get('Preference-Applied', '') == RequestedProcessExecutionMode.respond_async.value):  # noqa
+    async_preference = RequestedProcessExecutionMode.async_execute.value
+    execution_preference = get_from_headers(headers, 'preference-applied')
+    if (execution_preference == async_preference):
         LOGGER.debug('Asynchronous mode detected, returning statusInfo')
         response2 = {
             'jobID': job_id,
