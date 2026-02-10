@@ -59,7 +59,7 @@ from pygeoapi.process.base import (
 from pygeoapi.process.manager.base import get_manager, Subscriber
 from pygeoapi.util import (
     json_serial, render_j2_template, JobStatus, RequestedProcessExecutionMode,
-    to_json, DATETIME_FORMAT)
+    to_json, DATETIME_FORMAT, get_from_headers)
 
 from . import (
     APIRequest, API, SYSTEM_LOCALE, F_JSON, FORMAT_TYPES, F_HTML, F_JSONLD,
@@ -528,13 +528,13 @@ def execute_process(api: API, request: APIRequest,
     else:
         response2 = response
 
-    if (headers.get('Preference-Applied', '') == RequestedProcessExecutionMode.respond_async.value):  # noqa
+    if (get_from_headers(headers, 'preference-applied') == RequestedProcessExecutionMode.respond_async.value):  # noqa
         LOGGER.debug('Asynchronous mode detected, returning statusInfo')
-        response2 = {
+        response2 = to_json({
             'jobID': job_id,
             'type': 'process',
             'status': status.value
-        }
+        })
 
     if api.pubsub_client is not None:
         LOGGER.debug('Publishing message')
