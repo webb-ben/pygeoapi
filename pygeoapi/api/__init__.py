@@ -153,7 +153,7 @@ def apply_gzip(headers: dict, content: Union[str, bytes]) -> Union[str, bytes]:
             if isinstance(content, bytes):
                 # bytes means Content-Type needs to be set upstream
                 content = compress(content)
-            else:
+            elif isinstance(content, str):
                 headers['Content-Type'] = \
                     f"{headers['Content-Type']}; charset={charset}"
                 content = compress(content.encode(charset))
