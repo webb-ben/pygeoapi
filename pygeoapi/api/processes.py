@@ -530,11 +530,11 @@ def execute_process(api: API, request: APIRequest,
 
     if (get_from_headers(headers, 'preference-applied') == RequestedProcessExecutionMode.respond_async.value):  # noqa
         LOGGER.debug('Asynchronous mode detected, returning statusInfo')
-        response2 = to_json({
+        response2 = {
             'jobID': job_id,
             'type': 'process',
             'status': status.value
-        })
+        }
 
     if api.pubsub_client is not None:
         LOGGER.debug('Publishing message')
