@@ -34,6 +34,16 @@ jobs:
         env:
           POSTGRES_DB: test
           POSTGRES_PASSWORD: ${{ secrets.DatabasePassword || 'postgres' }}
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: mysql
+          MYSQL_DATABASE: test_geo_app
+          MYSQL_USER: pygeoapi
+          MYSQL_PASSWORD: mysql
+        ports:
+          - 3306:3306
+
     
     steps:
     - name: Pre-pull Docker Images
@@ -66,16 +76,6 @@ jobs:
         sudo sysctl -w vm.swappiness=1
         sudo sysctl -w fs.file-max=262144
         sudo sysctl -w vm.max_map_count=262144
-    - name: "Install and run MySQL 📦"
-      uses: mirromutth/mysql-action@v1.1
-      with:
-        host port: 3306 
-        mysql version: '8.0' 
-        mysql database: test_geo_app
-        mysql root password: mysql # This is a dummy password here; not actually used in prod
-        mysql user: pygeoapi 
-        mysql password: mysql 
-        
     - name: Install and run Elasticsearch 📦
       uses: getong/elasticsearch-action@v1.2
       with:
@@ -135,7 +135,7 @@ jobs:
         python3 tests/load_opensearch_data.py tests/data/ne_110m_populated_places_simple.geojson geonameid
         python3 tests/load_mongo_data.py tests/data/ne_110m_populated_places_simple.geojson
         gunzip < tests/data/hotosm_bdi_waterways.sql.gz | psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test
-        psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/dummy_data.sql
+        psql postgresql://postgres:postgres@localhost:5432/test -f tests/data/dummy_types_data.sql
         psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/dummy_types_data.sql
         psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/postgres_manager_full_structure.backup.sql
         mysql -h 127.0.0.1 -P 3306 -u root -p'mysql' test_geo_app < tests/data/mysql_data.sql
