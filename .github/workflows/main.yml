@@ -43,14 +43,6 @@ jobs:
           MYSQL_PASSWORD: mysql
         ports:
           - 3306:3306
-      sensorthings:
-        image: ghcr.io/cgs-earth/sensorthings-action:0.1.0
-        env:
-          POSTGRES_TABLE: sensorthings
-          POSTGRES_USER: sensorthings
-          POSTGRES_PASS: ChangeMe
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
         ports:
@@ -72,6 +64,20 @@ jobs:
         image: mongo:8.0.4
         ports:
           - 27017:27017
+      web:
+        image: fraunhoferiosb/frost-server:2.0
+        env:
+          persistence_db_driver: org.postgresql.Driver
+          persistence_db_url: jdbc:postgresql://database:5432/test
+          persistence_db_username: postgres
+          persistence_db_password: ${{ secrets.DatabasePassword || 'postgres' }}
+          serviceRootUrl: http://localhost:8888/FROST-Server
+          http_cors_enable: true
+          http_cors_allowed.origins: "*"
+          persistence_autoUpdateDatabase: true
+          persistence_idGenerationMode: ServerAndClientGenerated
+        ports:
+          - 8888:8080
 
     steps:
     - name: Clear up GitHub runner diskspace
@@ -143,6 +149,7 @@ jobs:
         python3 tests/load_opensearch_data.py tests/data/ne_110m_populated_places_simple.geojson geonameid
         python3 tests/load_mongo_data.py tests/data/ne_110m_populated_places_simple.geojson
         gunzip < tests/data/hotosm_bdi_waterways.sql.gz | psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test
+        gunzip < tests/data/iow_sensorthings.sql.gz | psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test
         psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/dummy_data.sql
         psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/dummy_types_data.sql
         psql postgresql://postgres:${{ secrets.DatabasePassword || 'postgres' }}@localhost:5432/test -f tests/data/postgres_manager_full_structure.backup.sql
