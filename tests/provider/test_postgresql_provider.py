@@ -354,6 +354,16 @@ def test_get_simple(config, id_, prev, next_):
     assert result['next'] == next_
 
 
+@pytest.mark.parametrize('id_', [29701937, 13990765, 620735702])
+def test_get_without_prev_next_links(config, id_):
+    """Testing query for a specific object without prev/next links"""
+    config['add_prev_next'] = False
+    provider = PostgreSQLProvider(config)
+    result = provider.get(id_)
+    assert 'prev' not in result
+    assert 'next' not in result
+
+
 def test_get_with_config_properties(config):
     """
     Test that get is restricted by properties in the config.

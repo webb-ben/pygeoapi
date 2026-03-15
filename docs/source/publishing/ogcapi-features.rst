@@ -699,6 +699,7 @@ These are optional and if not specified, the default from the engine will be use
          table: hotosm_bdi_waterways
          geom_field: foo_geom
          count: true # Optional; Default true; Enable/disable count for improved performance.
+         add_prev_next: true # Optional; Default true; Enable/disable prev and next links queries for improved performance.
 
 The PostgreSQL provider is also able to connect to Cloud SQL databases.
 

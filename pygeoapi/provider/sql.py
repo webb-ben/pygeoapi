@@ -115,6 +115,8 @@ class GenericSQLProvider(BaseProvider):
         self.id_field = provider_def['id_field']
         self.geom = provider_def.get('geom_field', 'geom')
         self.driver_name = driver_name
+        # Fetch previous/next features with single feature (default: True)
+        self.add_prev_next = provider_def.get('add_prev_next', True)
 
         LOGGER.debug(f'Name: {self.name}')
         LOGGER.debug(f'Table: {self.table}')
@@ -328,29 +330,8 @@ class GenericSQLProvider(BaseProvider):
                         props.pop(item)
 
             # Add fields for previous and next items
-            id_field = getattr(self.table_model, self.id_field)
-            prev_item = (
-                session.query(self.table_model)
-                .order_by(id_field.desc())
-                .filter(id_field < identifier)
-                .first()
-            )
-            next_item = (
-                session.query(self.table_model)
-                .order_by(id_field.asc())
-                .filter(id_field > identifier)
-                .first()
-            )
-            feature['prev'] = (
-                getattr(prev_item, self.id_field)
-                if prev_item is not None
-                else identifier
-            )
-            feature['next'] = (
-                getattr(next_item, self.id_field)
-                if next_item is not None
-                else identifier
-            )
+            if self.add_prev_next:
+                self._get_prev_next(session, identifier, feature)
 
         return feature
 
@@ -572,6 +553,42 @@ class GenericSQLProvider(BaseProvider):
         selected_properties_clause = load_only(*selected_columns)
 
         return selected_properties_clause
+
+    def _get_prev_next(self, session, identifier, feature):
+        """
+        Helper function to get the previous and next feature ids.
+
+        :param session: SQLAlchemy session
+        :param identifier: current feature id
+        :param feature: current feature dict
+        """
+        # Add fields for previous and next items
+        id_field = getattr(self.table_model, self.id_field)
+        # Get previous id (max id < current)
+        prev_item = (
+            session.query(self.table_model)
+            .order_by(id_field.desc())
+            .filter(id_field < identifier)
+            .first()
+        )
+        feature['prev'] = (
+            getattr(prev_item, self.id_field)
+            if prev_item is not None
+            else identifier
+        )
+
+        # Get next id (min id > current)
+        next_item = (
+            session.query(self.table_model)
+            .order_by(id_field.asc())
+            .filter(id_field > identifier)
+            .first()
+        )
+        feature['next'] = (
+            getattr(next_item, self.id_field)
+            if next_item is not None
+            else identifier
+        )
 
 
 def store_db_parameters(
