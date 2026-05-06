@@ -467,7 +467,7 @@ def execute_process(api: API, request: APIRequest,
 
     try:
         execution_mode = RequestedProcessExecutionMode(
-            request.headers.get('Prefer', request.headers.get('prefer'))
+            get_from_headers(request.headers, 'prefer')
         )
     except ValueError:
         execution_mode = None
