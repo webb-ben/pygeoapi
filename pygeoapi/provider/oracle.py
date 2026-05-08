@@ -655,6 +655,10 @@ class OracleProvider(BaseProvider):
         """
         LOGGER.debug(f"properties contains: {properties}")
 
+        feature_collection = {
+            'type': 'FeatureCollection',
+            'features': [],
+        }
         # NOTE: properties contains field keys plus extra params
         #       need to split them up here
         filtered_properties = []
@@ -737,8 +741,13 @@ class OracleProvider(BaseProvider):
                 )
                 raise ProviderQueryError()
 
-            hits = cursor.fetchone()[0]
-            LOGGER.debug(f"hits: {str(hits)}")
+            if self.count or resulttype == "hits":
+                hits = cursor.fetchone()[0]
+                LOGGER.debug(f"hits: {str(hits)}")
+                feature_collection['numberMatched'] = hits
+
+        if resulttype == "hits":
+            return feature_collection
 
         with DatabaseConnection(
             self.conn_dic, self.table, properties=self.properties
@@ -844,13 +853,11 @@ class OracleProvider(BaseProvider):
 
             row_data = cursor.fetchall()
 
-            # Generate feature JSON
-            features = [self._response_feature(rd) for rd in row_data]
-            feature_collection = {
-                "numberMatched": hits,
-                "type": "FeatureCollection",
-                "features": features,
-            }
+        # Generate feature JSON
+        feature_collection['numberReturned'] = 0
+        for rd in row_data:
+            feature_collection['features'].append(self._response_feature(rd))
+            feature_collection['numberReturned'] += 1
 
             return feature_collection
 
@@ -1039,18 +1046,6 @@ class OracleProvider(BaseProvider):
             return feature
         else:
             return None
-
-    def _response_feature_hits(self, hits):
-        """Assembles GeoJSON/Feature number
-        e.g: http://localhost:5000/collections/lakes/items?resulttype=hits
-
-        :returns: GeoJSON FeaturesCollection
-        """
-
-        feature_collection = {"features": [], "type": "FeatureCollection"}
-        feature_collection["numberMatched"] = hits
-
-        return feature_collection
 
     def create(self, request_data):
         """

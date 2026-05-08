@@ -405,6 +405,20 @@ def test_query_bbox(config):
     assert features[0]["properties"]["name"] == "Aral Sea"
 
 
+def test_no_count(config):
+    p = OracleProvider(config)
+
+    results = p.query()
+    assert results['numberMatched'] == 25
+    assert results['numberReturned'] == 1
+
+    config['count'] = False
+    p = OracleProvider(config)
+    results = p.query()
+    assert 'numberMatched' not in results
+    assert results['numberReturned'] == 1
+
+
 def test_query_sortby(config):
     """Test query with sorting"""
     p = OracleProvider(config)
