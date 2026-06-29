@@ -882,6 +882,14 @@ def get_collection_item(api: API, request: APIRequest,
         msg = 'Collection not found'
         return api.get_exception(
             HTTPStatus.NOT_FOUND, headers, request.format, 'NotFound', msg)
+    
+    dataset_formatters = get_dataset_formatters(collections[dataset])
+
+    if dataset_formatters:
+        LOGGER.debug(f'Dataset formatters: {dataset_formatters}')
+        request._format = request._get_format(dataset_formatters)
+
+        LOGGER.debug(f'Request format: {request.format}')
 
     LOGGER.debug('Loading provider')
 
@@ -1018,6 +1026,38 @@ def get_collection_item(api: API, request: APIRequest,
         content = render_j2_template(api.tpl_config, tpl_config,
                                      'collections/items/item.html',
                                      content, request.locale)
+        return headers, HTTPStatus.OK, content
+
+    elif request.format in dataset_formatters:
+        formatter = dataset_formatters[request.format]
+
+        try:
+            content = formatter.write(
+                data=content,
+                options={
+                    'content_crs': query_crs_uri,
+                    'provider_def': get_provider_by_type(
+                        collections[dataset]['providers'],
+                        'feature')
+                }
+            )
+        except FormatterSerializationError:
+            msg = 'Error serializing output'
+            return api.get_exception(
+                HTTPStatus.INTERNAL_SERVER_ERROR, headers, request.format,
+                'NoApplicableCode', msg)
+
+        headers['Content-Type'] = formatter.mimetype
+
+        if formatter.attachment:
+            if p.filename is None:
+                filename = f'{dataset}.{formatter.extension}'
+            else:
+                filename = f'{p.filename}'
+
+            cd = f'attachment; filename="{filename}"'
+            headers['Content-Disposition'] = cd
+
         return headers, HTTPStatus.OK, content
 
     elif request.format == F_JSONLD:

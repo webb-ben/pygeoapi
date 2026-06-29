@@ -86,15 +86,18 @@ class CSVFormatter(BaseFormatter):
 
         :returns: string representation of format
         """
+        # Get first feature
+        ff = data['features'][0] if 'features' in data else data
+
         try:
-            fields = list(data['features'][0]['properties'].keys())
+            fields = list(ff['properties'].keys())
         except IndexError:
             LOGGER.error('no features')
             return str()
 
         if self.geom:
             LOGGER.debug('Including point geometry')
-            if data['features'][0]['geometry']['type'] == 'Point':
+            if ff['geometry']['type'] == 'Point':
                 LOGGER.debug('point geometry detected, adding x,y columns')
                 fields.insert(0, 'x')
                 fields.insert(1, 'y')
@@ -108,7 +111,7 @@ class CSVFormatter(BaseFormatter):
         writer = csv.DictWriter(output, fields, extrasaction='ignore')
         writer.writeheader()
 
-        for feature in data['features']:
+        for feature in data.get('features', [data]):
             self._add_feature(writer, feature, is_point)
 
         return output.getvalue().encode('utf-8')
